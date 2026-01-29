@@ -28,13 +28,15 @@ defmodule OrdinaryPreviewGate.Router do
     path = Keyword.get(opts, :path, "/__preview")
     pipe = Keyword.get(opts, :pipe_through, :browser)
 
+    controller = OrdinaryPreviewGate.LoginController
+
     quote do
       scope unquote(path), unquote(web_module) do
         pipe_through(unquote(pipe))
 
-        get("/login", OrdinaryPreviewGate.LoginController, :new)
-        post("/login", OrdinaryPreviewGate.LoginController, :create)
-        delete("/logout", OrdinaryPreviewGate.LoginController, :logout)
+        get("/login", unquote(controller), :new)
+        post("/login", unquote(controller), :create)
+        delete("/logout", unquote(controller), :logout)
       end
     end
   end
