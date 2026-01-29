@@ -78,7 +78,8 @@ defmodule OrdinaryPreviewGate.LoginPlug do
           body { margin: 0; background: #fff; color: #000; font-family: ui-sans-serif, system-ui, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif; }
           .wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 48px 20px; }
           .card { width: 100%; max-width: 720px; border: 1px solid #e5e7eb; border-radius: 20px; padding: 28px; background: #fff; }
-          .mark { display: block; height: 22px; }
+          .mark { display: block; line-height: 0; }
+          .mark svg { display: block; height: 22px; width: auto; }
           .title { margin: 18px 0 6px; font-size: 28px; font-weight: 600; letter-spacing: -0.02em; }
           .desc { margin: 0 0 18px; color: #111; opacity: 0.75; }
           .meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 18px 0 20px; }
