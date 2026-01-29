@@ -1,11 +1,22 @@
-defmodule OrdinaryPreviewGate.LoginController do
+defmodule OrdinaryPreviewGate.LoginPlug do
   @moduledoc false
 
   import Plug.Conn
 
   @session_ok :preview_gate_ok
 
-  def new(conn, _params) do
+  def init(action), do: action
+
+  def call(conn, action) do
+    case action do
+      :new -> new(conn)
+      :create -> create(conn)
+      :logout -> logout(conn)
+      _ -> send_resp(conn, 404, "not found")
+    end
+  end
+
+  defp new(conn) do
     html = render_html(conn)
 
     conn
@@ -13,7 +24,9 @@ defmodule OrdinaryPreviewGate.LoginController do
     |> send_resp(200, html)
   end
 
-  def create(conn, %{"password" => password}) do
+  defp create(conn) do
+    params = conn.params || %{}
+    password = Map.get(params, "password", "")
     expected = System.get_env("PREVIEW_GATE_PASSWORD", "")
 
     if expected != "" and Plug.Crypto.secure_compare(password, expected) do
@@ -30,7 +43,7 @@ defmodule OrdinaryPreviewGate.LoginController do
     end
   end
 
-  def logout(conn, _params) do
+  defp logout(conn) do
     conn
     |> delete_session(@session_ok)
     |> Phoenix.Controller.redirect(to: login_path())
@@ -48,7 +61,6 @@ defmodule OrdinaryPreviewGate.LoginController do
     csrf = Plug.CSRFProtection.get_csrf_token()
     error = Phoenix.Flash.get(conn.assigns[:flash] || %{}, :error)
 
-    # Inline the SVG to avoid host static asset copying.
     svg = OrdinaryPreviewGate.Assets.ordinary_wordmark_svg() |> strip_xml_decl()
 
     form_action = login_path()
@@ -124,13 +136,9 @@ defmodule OrdinaryPreviewGate.LoginController do
   end
 
   defp error_block(nil), do: ~s(<div class="hint">Not production. Not indexed.</div>)
+  defp error_block(msg), do: ~s(<div class="error">#{escape(msg)}</div>)
 
-  defp error_block(msg),
-    do: ~s(<div class="error">#{escape(msg)}</div>)
-
-  defp strip_xml_decl(svg) do
-    String.replace(svg, ~r/^<\?xml[^>]*>\s*/m, "")
-  end
+  defp strip_xml_decl(svg), do: String.replace(svg, ~r/^<\?xml[^>]*>\s*/m, "")
 
   defp escape(nil), do: ""
 

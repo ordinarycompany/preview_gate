@@ -18,15 +18,15 @@ defmodule OrdinaryPreviewGate.Router do
     path = Keyword.get(opts, :path, "/__preview")
     pipe = Keyword.get(opts, :pipe_through, :browser)
 
-    controller = Macro.escape(:"Elixir.OrdinaryPreviewGate.LoginController")
+    plug_module = Macro.escape(:"Elixir.OrdinaryPreviewGate.LoginPlug")
 
     quote do
       scope unquote(path), unquote(web_module) do
         pipe_through(unquote(pipe))
 
-        get("/login", unquote(controller), :new)
-        post("/login", unquote(controller), :create)
-        delete("/logout", unquote(controller), :logout)
+        get("/login", unquote(plug_module), :new)
+        post("/login", unquote(plug_module), :create)
+        delete("/logout", unquote(plug_module), :logout)
       end
     end
   end
