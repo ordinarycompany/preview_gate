@@ -2,7 +2,7 @@ defmodule OrdinaryPreviewGate.Controller do
   @moduledoc """
   Controller helpers for the preview gate.
 
-  Host app typically defines its own controller that delegates to these helpers,
+  Host apps typically define their own controller that delegates to these helpers,
   so the host can choose layout, app name, build id, etc.
 
   Example host controller:
@@ -14,6 +14,7 @@ defmodule OrdinaryPreviewGate.Controller do
         def create(conn, params), do: OrdinaryPreviewGate.Controller.handle_login(conn, params)
         def logout(conn, _), do: OrdinaryPreviewGate.Controller.logout(conn)
       end
+
   """
 
   import Plug.Conn
@@ -51,13 +52,17 @@ defmodule OrdinaryPreviewGate.Controller do
     else
       conn
       |> Phoenix.Controller.put_flash(:error, "Incorrect password")
-      |> Phoenix.Controller.redirect(to: "/__preview/login")
+      |> Phoenix.Controller.redirect(to: login_path())
     end
   end
 
   def logout(conn) do
     conn
     |> delete_session(@session_ok)
-    |> Phoenix.Controller.redirect(to: "/__preview/login")
+    |> Phoenix.Controller.redirect(to: login_path())
+  end
+
+  defp login_path do
+    System.get_env("PREVIEW_GATE_LOGIN_PATH", "/__preview/login")
   end
 end

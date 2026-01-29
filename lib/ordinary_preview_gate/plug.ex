@@ -4,23 +4,16 @@ defmodule OrdinaryPreviewGate.Plug do
 
   When enabled, blocks access until a visitor enters the shared preview password.
 
-  ## Configuration
+  ## Configuration (env)
 
-  Enable with env vars (recommended for preview deploys):
+  - `PREVIEW_GATE_ENABLED=true|false`
+  - `PREVIEW_GATE_PASSWORD=...`
+  - `PREVIEW_GATE_LOGIN_PATH=/__preview/login` (optional)
+  - `PREVIEW_GATE_LOGOUT_PATH=/__preview/logout` (optional)
 
-    PREVIEW_GATE_ENABLED=true
-    PREVIEW_GATE_PASSWORD=...
-    PREVIEW_GATE_PR=123
+  ## Notes
 
-  Optional display vars:
-
-    PREVIEW_GATE_APP_NAME=... (or app derives from host config)
-    PREVIEW_GATE_BUILD_ID=... (or host passes build_id via assigns)
-
-  Host apps should add routes and a controller action to render the login page.
-  This repo provides a minimal layout + HEEx template for that page.
-
-  This is intentionally simple and portable (Fly/AWS/etc).
+  This Plug requires the host pipeline to include `plug :fetch_session`.
   """
 
   import Plug.Conn
@@ -29,21 +22,27 @@ defmodule OrdinaryPreviewGate.Plug do
 
   def init(opts), do: opts
 
-  def call(conn, _opts) do
+  def call(conn, opts) do
     if enabled?() do
-      if allowlisted_path?(conn.request_path) do
+      login_path =
+        Keyword.get(opts, :login_path, env("PREVIEW_GATE_LOGIN_PATH", "/__preview/login"))
+
+      logout_path =
+        Keyword.get(opts, :logout_path, env("PREVIEW_GATE_LOGOUT_PATH", "/__preview/logout"))
+
+      if allowlisted_path?(conn.request_path, login_path, logout_path) do
         conn
       else
-        case get_session(conn, @session_key) do
+        return_to = current_path_with_query(conn)
+
+        case safe_get_session(conn, @session_key) do
           true ->
             conn
 
           _ ->
-            return_to = current_path_with_query(conn)
-
             conn
-            |> put_session(:preview_gate_return_to, return_to)
-            |> Phoenix.Controller.redirect(to: "/__preview/login")
+            |> safe_put_session(:preview_gate_return_to, return_to)
+            |> Phoenix.Controller.redirect(to: login_path)
             |> halt()
         end
       end
@@ -53,30 +52,66 @@ defmodule OrdinaryPreviewGate.Plug do
   end
 
   defp enabled? do
-    System.get_env("PREVIEW_GATE_ENABLED") in ["1", "true", "TRUE", "yes", "YES"]
+    env("PREVIEW_GATE_ENABLED", "false") in ["1", "true", "TRUE", "yes", "YES"]
   end
 
-  defp allowlisted_path?(path) do
-    # Login/logout and assets/health endpoints should remain reachable.
-    Enum.any?([
-      "/__preview/login",
-      "/__preview/login/",
-      "/__preview/logout",
-      "/healthz",
-      "/assets/"
-    ], fn item ->
-      if String.ends_with?(item, "/") do
-        String.starts_with?(path, item)
-      else
-        path == item
+  defp env(key, default) do
+    case System.get_env(key) do
+      nil -> default
+      "" -> default
+      v -> v
+    end
+  end
+
+  defp allowlisted_path?(path, login_path, logout_path) do
+    Enum.any?(
+      [
+        login_path,
+        ensure_trailing_slash(login_path),
+        logout_path,
+        "/healthz",
+        "/assets/"
+      ],
+      fn item ->
+        if String.ends_with?(item, "/") do
+          String.starts_with?(path, item)
+        else
+          path == item
+        end
       end
-    end)
+    )
+  end
+
+  defp ensure_trailing_slash(path) do
+    if String.ends_with?(path, "/"), do: path, else: path <> "/"
   end
 
   defp current_path_with_query(conn) do
     case conn.query_string do
       "" -> conn.request_path
       qs -> conn.request_path <> "?" <> qs
+    end
+  end
+
+  defp safe_get_session(conn, key) do
+    try do
+      get_session(conn, key)
+    rescue
+      ArgumentError ->
+        raise ArgumentError,
+              "OrdinaryPreviewGate.Plug requires sessions. Add `plug :fetch_session` " <>
+                "before this plug in your pipeline."
+    end
+  end
+
+  defp safe_put_session(conn, key, value) do
+    try do
+      put_session(conn, key, value)
+    rescue
+      ArgumentError ->
+        raise ArgumentError,
+              "OrdinaryPreviewGate.Plug requires sessions. Add `plug :fetch_session` " <>
+                "before this plug in your pipeline."
     end
   end
 end

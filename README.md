@@ -14,6 +14,8 @@ Set these environment variables in your preview environment:
 
 - `PREVIEW_GATE_ENABLED=true`
 - `PREVIEW_GATE_PASSWORD=...`
+- `PREVIEW_GATE_LOGIN_PATH=/__preview/login` (optional)
+- `PREVIEW_GATE_LOGOUT_PATH=/__preview/logout` (optional)
 - `PREVIEW_GATE_PR=123` (optional)
 - `PREVIEW_GATE_APP_NAME=...` (optional)
 - `PREVIEW_GATE_BUILD_ID=...` (optional)
@@ -23,7 +25,7 @@ Set these environment variables in your preview environment:
 ### 1) Add the dependency
 
 ```elixir
-{:ordinary_preview_gate, github: "ordinarycompany/preview_gate", tag: "v0.1.1"}
+{:ordinary_preview_gate, github: "ordinarycompany/preview_gate", tag: "v0.1.2"}
 ```
 
 ### 2) Add the Plug to your browser pipeline
@@ -64,15 +66,12 @@ import OrdinaryPreviewGate.Router
 preview_gate_routes(MyAppWeb)
 ```
 
-By default this creates:
-- `GET /__preview/login`
-- `POST /__preview/login`
-- `DELETE /__preview/logout`
+## Wordmark asset
 
-You can customize the mount path:
+If you want to inline the Ordinary. wordmark SVG (no extra static asset copying), you can use:
 
 ```elixir
-preview_gate_routes(MyAppWeb, path: "/_preview")
+OrdinaryPreviewGate.Assets.ordinary_wordmark_svg()
 ```
 
 ## License
