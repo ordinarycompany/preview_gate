@@ -27,7 +27,15 @@ defmodule OrdinaryPreviewGate.Controller do
       build_id: System.get_env("PREVIEW_GATE_BUILD_ID", "(unknown)")
     }
 
-    Phoenix.Controller.render(conn, view_module, :new, Map.merge(default_assigns, assigns))
+    assigns_map =
+      cond do
+        is_map(assigns) -> assigns
+        Keyword.keyword?(assigns) -> Map.new(assigns)
+        true -> %{}
+      end
+
+    Phoenix.Controller.put_view(conn, view_module)
+    |> Phoenix.Controller.render(:new, Map.merge(default_assigns, assigns_map))
   end
 
   def handle_login(conn, %{"password" => password}) do
