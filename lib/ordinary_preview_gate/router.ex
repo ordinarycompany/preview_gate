@@ -2,48 +2,39 @@ defmodule OrdinaryPreviewGate.Router do
   @moduledoc """
   Router helpers for mounting the preview gate.
 
-  Usage:
+  Minimal integration goal: **two lines** in the host router.
 
-      defmodule MyAppWeb.Router do
-        use MyAppWeb, :router
+  1) Add the plug to your browser pipeline:
 
-        pipeline :browser do
-          # ...
-          plug OrdinaryPreviewGate.Plug
-        end
+      plug OrdinaryPreviewGate.Plug
 
-        pipeline :preview do
-          plug :accepts, ["html"]
-          plug :fetch_session
-          plug :fetch_live_flash
-          plug :put_root_layout, html: {MyAppWeb.Layouts, :preview_gate}
-          plug :protect_from_forgery
-          plug :put_secure_browser_headers
-        end
+  2) Mount routes:
 
-        scope "/", MyAppWeb do
-          pipe_through :browser
-          # ...your app routes...
-        end
+      import OrdinaryPreviewGate.Router
+      preview_gate_routes(MyAppWeb)
 
-        import OrdinaryPreviewGate.Router
+  By default this mounts:
+  - `GET /__preview/login`
+  - `POST /__preview/login`
+  - `DELETE /__preview/logout`
 
-        preview_gate_routes(MyAppWeb)
-      end
-
-  The macro keeps host apps explicit while avoiding copy/paste boilerplate.
+  Notes:
+  - Routes are piped through `:browser` by default so they have sessions and CSRF.
+  - You can change the mount path with `path:`.
+  - You can change which pipeline is used with `pipe_through:`.
   """
 
   defmacro preview_gate_routes(web_module, opts \\ []) do
     path = Keyword.get(opts, :path, "/__preview")
+    pipe = Keyword.get(opts, :pipe_through, :browser)
 
     quote do
       scope unquote(path), unquote(web_module) do
-        pipe_through(:preview)
+        pipe_through(unquote(pipe))
 
-        get("/login", PreviewGateController, :new)
-        post("/login", PreviewGateController, :create)
-        delete("/logout", PreviewGateController, :logout)
+        get("/login", OrdinaryPreviewGate.LoginController, :new)
+        post("/login", OrdinaryPreviewGate.LoginController, :create)
+        delete("/logout", OrdinaryPreviewGate.LoginController, :logout)
       end
     end
   end
