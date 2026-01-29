@@ -4,31 +4,21 @@ defmodule OrdinaryPreviewGate.Router do
 
   Minimal integration goal: **two lines** in the host router.
 
-  1) Add the plug to your browser pipeline:
-
       plug OrdinaryPreviewGate.Plug
-
-  2) Mount routes:
 
       import OrdinaryPreviewGate.Router
       preview_gate_routes(MyAppWeb)
 
-  By default this mounts:
-  - `GET /__preview/login`
-  - `POST /__preview/login`
-  - `DELETE /__preview/logout`
-
   Notes:
-  - Routes are piped through `:browser` by default so they have sessions and CSRF.
-  - You can change the mount path with `path:`.
-  - You can change which pipeline is used with `pipe_through:`.
+  - Uses `:browser` pipeline by default.
+  - `path:` and `pipe_through:` are customizable.
   """
 
   defmacro preview_gate_routes(web_module, opts \\ []) do
     path = Keyword.get(opts, :path, "/__preview")
     pipe = Keyword.get(opts, :pipe_through, :browser)
 
-    controller = OrdinaryPreviewGate.LoginController
+    controller = Macro.escape(:"Elixir.OrdinaryPreviewGate.LoginController")
 
     quote do
       scope unquote(path), unquote(web_module) do
