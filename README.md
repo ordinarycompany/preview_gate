@@ -1,21 +1,28 @@
-# OrdinaryPreviewGate
+# preview_gate
 
-**TODO: Add description**
+A small, branded **preview environment gate** for Phoenix applications.
 
-## Installation
+Use this to password-protect preview deployments (Fly.io, Railway, AWS, etc.) with a simple login page that sets a session cookie.
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `ordinary_preview_gate` to your list of dependencies in `mix.exs`:
+## Why
+- Prevent accidental exposure of preview environments
+- Provide a consistent, branded experience across apps
+- Keep the solution portable (no provider-specific auth)
 
-```elixir
-def deps do
-  [
-    {:ordinary_preview_gate, "~> 0.1.0"}
-  ]
-end
-```
+## Configuration
+Set these environment variables in your preview environment:
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/ordinary_preview_gate>.
+- `PREVIEW_GATE_ENABLED=true`
+- `PREVIEW_GATE_PASSWORD=...`
+- `PREVIEW_GATE_PR=123` (optional)
+- `PREVIEW_GATE_APP_NAME=...` (optional)
+- `PREVIEW_GATE_BUILD_ID=...` (optional)
 
+## Usage (high level)
+1) Add the dependency to your Phoenix app.
+2) Add the Plug to your browser pipeline.
+3) Add `/__preview/login` routes.
+4) Render the included login page (or your own).
+
+## License
+MIT
